@@ -3,10 +3,10 @@ module VGA_CTRL (
     input wire RSTN,
 
     output wire hsync, // horizontal synchronization signal
-    output wire ysync, // vertical synchronization signal
+    output wire vsync, // vertical synchronization signal
 
-    output wire pixel_x, // horizontal pos
-    output wire pixel_y  // vertical pos
+    output wire[9:0] pixel_x, // horizontal pos
+    output wire[9:0] pixel_y  // vertical pos
     );
 
 parameter WIDTH = 640;
@@ -20,37 +20,41 @@ parameter V_START = 35;
 
 reg[9:0] x, y;
 
+initial begin
+	x <= 10'd0;
+	y <= 10'd0;
+end
 
-always @(posedge clk | posedge RSTN) begin
+always @(posedge clk or posedge RSTN) begin
     if (RSTN)
-        x <= 0;
+        x <= 10'd0;
     else begin
-        if (x >= H_PIXELS) begin
-            x <= 0;
+        if (x == 10'd700) begin
+            x <= 10'd0;
         end
         else 
-            x <= x + 1;
+            x <= x + 10'd1;
     end
 end
 
-always @(posedge clk | posedge RSTN) begin
+always @(posedge clk or posedge RSTN) begin
     if (RSTN)
-        y <= 0;
+        y <= 10'd0;
     else begin
-        if (x >= H_PIXELS)
-            if (y >= V_PIXELS)
-                y <= 0;
+        if (x == 10'd700)
+            if (y == 10'd450)
+                y <= 10'd0;
             else 
-                y <= y + 1;
+                y <= y + 10'd1;
     end
 end
 
 
-assign hsync = (x >= H_SYNC_END);
-assign vsync = (y >= V_SYNC_END);
+assign hsync = (x > 10'd95);
+assign vsync = (y > 10'd1);
 
-assign pixel_x = x - H_START;
-assign pixel_y = y - V_START;
+assign pixel_x = x - 10'd223;
+assign pixel_y = y - 10'd35;
 
 
 endmodule
