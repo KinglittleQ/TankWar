@@ -13,6 +13,11 @@ NET "red[3]"            LOC = P21       | IOSTANDARD = LVCMOS33 | SLEW = FAST ;
 NET "hsync"             LOC = M22       | IOSTANDARD = LVCMOS33 | SLEW = FAST ;
 NET "vsync"             LOC = M21       | IOSTANDARD = LVCMOS33 | SLEW = FAST ;
 
+NET "ps2_data"          LOC = N18       | IOSTANDARD = LVCMOS33;
+NET "ps2_clk"           LOC = M19       | IOSTANDARD = LVCMOS33;
+
+
+
 NET "clk_100mhz"        LOC = AC18      |  IOSTANDARD = LVCMOS18;
 NET "clk_100mhz"      TNM_NET = TM_CLK;
 TIMESPEC TS_CLK_100M = PERIOD "TM_CLK"  10 ns HIGH 50%;
@@ -21,12 +26,3 @@ NET "Buzzer"            LOC = AF24      |  IOSTANDARD = LVCMOS33;
 
 NET "RSTN"              LOC = AA10      | IOSTANDARD = LVCMOS15 ;
 
-NET "K_ROW[0]"          LOC = V17       | IOSTANDARD = LVCMOS18 ;
-NET "K_ROW[1]"          LOC = W18       | IOSTANDARD = LVCMOS18 ;
-NET "K_ROW[2]"          LOC = W19       | IOSTANDARD = LVCMOS18 ;
-NET "K_ROW[3]"          LOC = W15       | IOSTANDARD = LVCMOS18 ;
-NET "K_ROW[4]"          LOC = W16       | IOSTANDARD = LVCMOS18 ;
-NET "BTN[0]"            LOC = V18       | IOSTANDARD = LVCMOS18 ;
-NET "BTN[1]"            LOC = V19       | IOSTANDARD = LVCMOS18 ;
-NET "BTN[2]"            LOC = V14       | IOSTANDARD = LVCMOS18 ;
-NET "BTN[3]"            LOC = W14       | IOSTANDARD = LVCMOS18 ;

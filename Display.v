@@ -1,5 +1,5 @@
 module Display (
-    input wire clk_100mhz,
+    input wire clk,
     input wire[3:0] category,
 
     output reg[3:0] red,
@@ -11,7 +11,7 @@ parameter NONE = 4'd0;
 parameter WALL = 4'd1;
 parameter TANK = 4'd2;
 
-always @(posedge clk_100mhz) begin
+always @(posedge clk) begin
     case (category)
     NONE:
 	 begin
@@ -22,14 +22,14 @@ always @(posedge clk_100mhz) begin
     WALL:
 	 begin
         red <= 4'hf;
-        green <= 4'h0;
-        blue <= 4'h0;
+        green <= 4'hf;
+        blue <= 4'hf;
 	 end
     TANK:
 	 begin
         red <= 4'hf;
-        green <= 4'h0;
-        blue <= 4'h0;
+        green <= 4'hf;
+        blue <= 4'hf;
 	 end
 	 default:
 	 begin

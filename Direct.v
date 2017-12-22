@@ -1,6 +1,7 @@
 module Direct (
-    input wire clk_100mhz,
-    input wire[3:0] BTN,
+    input wire clk,
+    input wire[7:0] ascii,
+    input wire press,
     output reg[2:0] direct,
     output reg moving
     );
@@ -10,43 +11,21 @@ parameter RIGHT = 3'b001;
 parameter UP = 3'b010;
 parameter DOWN = 3'b011;
 
-reg[31:0] cnt;
-reg[4:0] BTN_tmp;
-wire[4:0] button = {~RSTN, ~BTN[3:0]};
 
-always @(posedge clk_100mhz) begin
-    BTN_tmp <= button;
-    if (BTN_tmp != button) begin
-        cnt <= 32'h0;
-        
+always @(posedge clk) begin
+    if (1'b1) begin
+        moving <= 1'b1;
+        case (ascii)
+            8'h61: direct <= LEFT;
+            8'h64: direct <= RIGHT;
+            8'h77: direct <= UP;
+            8'h73: direct <= DOWN;
+            default: direct <= RIGHT;
+        endcase
     end
-    case (BTN)
-    4'b0001:
-	 begin
-        moving <= 1'b1;
-        direct <= LEFT;
-	 end
-    4'b0010:
-	 begin
-        moving <= 1'b1;
-        direct <= RIGHT;
-	 end
-    4'b0100:
-	 begin
-        moving <= 1'b1;
-        direct <= UP;
-	 end
-    4'b1000:
-	 begin
-        moving <= 1'b1;
-        direct <= DOWN;
-	 end
-    default:
-	 begin
+    else begin
         moving <= 1'b0;
-		  direct <= direct;
-	 end
-    endcase
+    end
 end
 
 endmodule

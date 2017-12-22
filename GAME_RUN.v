@@ -10,9 +10,6 @@ module GAME_RUN (
     output wire[9:0] address
     )
 
-parameter BLOCK_SIZE = 10;
-parameter WIDTH = 550;
-parameter HEIGHT = 450;
 
 parameter TANK_SIZE = 3;
 parameter BULLET_SIZE = 1;
