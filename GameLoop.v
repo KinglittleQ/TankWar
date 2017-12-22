@@ -51,8 +51,6 @@ initial begin
 
     n_bullets = 7'd0;
 
-    cnt_500ms = 32'd0;
-
 	category <= NONE;
 end
 
@@ -62,78 +60,20 @@ CLK_500ms M0 (
     .clk_500ms(clk_500ms)
     );
 
-CLK_250ms M1 (
-    .clk_100mhz(clk_100mhz),
-    .clk_250ms(CLK_250ms)
-    );
-
-reg[2:0] shoot_sync;
-reg[31:0] cnt_500ms;
-always @(posedge clk_100mhz) begin
-    shoot_sync <= {shoot, shoot_sync[1:0]};
-    if (cnt_500ms == )
-end
-
-assign shoot_up = ~shoot_sync[0] & shoot_sync[1];
+reg[2:0] moving_shift;
+reg[2:0] time_shift;
 
 always @(posedge clk_100mhz) begin
-    if (shoot_up) begin
-        case (tanks_direct[0])
-        LEFT: begin
-            if (tanks_x[0] > 10'd0) begin
-                n_bullets <= n_bullets + 7'd1;
-                bullets_x[n_bullets] <= tanks_x[0] - 10'd1;
-                bullets_y[n_bullets] <= tanks_y[0];
-                bullets_direct[n_bullets] <= tanks_direct[0];
-            end
-        end
-        RIGHT: begin
-            if (tanks_x[0] < WIDTH - 1) begin
-                n_bullets <= n_bullets + 7'd1;
-                bullets_x[n_bullets] <= tanks_x[0] + 10'd1;
-                bullets_y[n_bullets] <= tanks_y[0];
-                bullets_direct[n_bullets] <= tanks_direct[0];
-            end
-        end
-        UP: begin
-            if (tanks_y[0] > 10'd0) begin
-                n_bullets <= n_bullets + 7'd1;
-                bullets_x[n_bullets] <= tanks_x[0];
-                bullets_y[n_bullets] <= tanks_y[0] - 10'd1;
-                bullets_direct[n_bullets] <= tanks_direct[0];
-            end
-        end
-        DOWN: begin
-            if (tanks_y[0] < HEIGHT - 1) begin
-                n_bullets <= n_bullets + 7'd1;
-                bullets_x[n_bullets] <= tanks_x[0];
-                bullets_y[n_bullets] <= tanks_y[0] + 10'd1;
-                bullets_direct[n_bullets] <= tanks_direct[0];
-            end
-        end
-        endcase
-    end
-
-    for (i = 0; i < n_bullets; i = i + 1) begin
-        case (bullets_direct[i])
-        LEFT: bullets_x[i] <= bullets_x[i] - 10'd1;
-        RIGHT: bullets_x[i] <= bullets_x[i] + 10'd1;
-        UP: bullets_y[i] <= bullets_y[i] - 10'd1;
-        DOWN: bullets_y[i] <= bullets_y[i] + 10'd1;
-        endcase
-    end
-
-
+    moving_shift <= {moving, moving_shift[2:1]};
+    time_shift <= {clk_500ms, time_shift[2:1]};
 end
 
 
-always @(posedge clk_250ms) begin
-    
-end
+assign moving_edge = ~moving_shift[0] & moving_shift[1];
+assign time_edge = ~time_shift[0] & time_shift[1];
 
-
-always @(posedge clk_500ms) begin
-
+always @(posedge clk_100mhz) begin
+if (moving_edge | time_edge) begin
     if (moving) begin
         if (tanks_x[0] >= 10'd0 && tanks_x[0] < WIDTH - 10'd2 && tanks_y[0] >= 0 && tanks_y[0] < HEIGHT - 10'd2) begin
             case (direct)
@@ -157,7 +97,7 @@ always @(posedge clk_500ms) begin
         end
 		  
     end
-
+end
 end
 
 

@@ -13,7 +13,7 @@ parameter DOWN = 3'b011;
 
 
 always @(posedge clk) begin
-    if (1'b1) begin
+    if (press) begin
         moving <= 1'b1;
         case (ascii)
             8'h61: direct <= LEFT;

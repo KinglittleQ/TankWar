@@ -13,9 +13,10 @@ NET "red[3]"            LOC = P21       | IOSTANDARD = LVCMOS33 | SLEW = FAST ;
 NET "hsync"             LOC = M22       | IOSTANDARD = LVCMOS33 | SLEW = FAST ;
 NET "vsync"             LOC = M21       | IOSTANDARD = LVCMOS33 | SLEW = FAST ;
 
-NET "ps2_data"          LOC = N18       | IOSTANDARD = LVCMOS33;
-NET "ps2_clk"           LOC = M19       | IOSTANDARD = LVCMOS33;
-
+NET "ps2_data"          LOC = M19       | IOSTANDARD = LVCMOS33 | PULLUP ;
+NET "ps2_clk"           LOC = N18       | IOSTANDARD = LVCMOS33 | PULLUP ;
+#NET "ps2_clk"			LOC = P25       | IOSTANDARD = LVCMOS33 | PULLUP ;
+#NET "ps2_data"			LOC = N19       | IOSTANDARD = LVCMOS33 | PULLUP ;
 
 
 NET "clk_100mhz"        LOC = AC18      |  IOSTANDARD = LVCMOS18;

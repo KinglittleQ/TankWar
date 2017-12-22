@@ -12,6 +12,7 @@ reg clk, data;
 reg[3:0] count;
 
 reg[2:0] clk_sync;
+reg[2:0] ready_sync;
 reg ready;
 
 reg[7:0] ready_data, prev_data;
@@ -26,30 +27,33 @@ initial begin
 end
 
 always @(posedge clk_100mhz) begin
-    clk_filter <= {ps2_clk, clk_filter[6:1]};
-    data_filter <= {ps2_data, data_filter[6:1]};
+    // clk_filter <= {ps2_clk, clk_filter[7:1]};
+    // data_filter <= {ps2_data, data_filter[7:1]};
 
-    if (clk_filter == 8'b11111111) begin
-        clk <= 1'b1;
-    end
-    else if (clk_filter == 8'b00000000) begin
-        clk <= 1'b0;
-    end
+    // if (clk_filter == 8'b11111111) begin
+    //     clk <= 1'b1;
+    // end
+    // else if (clk_filter == 8'b00000000) begin
+    //     clk <= 1'b0;
+    // end
 
-    if (data_filter == 8'b11111111) begin
-        data <= 1'b1;
-    end
-    else if (data_filter == 8'b00000000) begin
-        data <= 1'b0;
-    end
+    // if (data_filter == 8'b11111111) begin
+    //     data <= 1'b1;
+    // end
+    // else if (data_filter == 8'b00000000) begin
+    //     data <= 1'b0;
+    // end
 
-    clk_sync <= {clk, clk_sync[2:1]};
+    // clk_sync <= {clk, clk_sync[2:1]};
+
+    clk_sync <= {ps2_clk, clk_sync[2:1]};
+    ready_sync <= {ready, ready_sync[2:1]};
 end
 
-assign neg_edge = ~clk_sync[1] & clk_sync[0];
+assign neg_edge = (~clk_sync[1]) & clk_sync[0];
 
 always @(posedge clk_100mhz) begin
-    if (neg_edge) begin
+    if (neg_edge || count == 4'd11) begin
         if (count == 4'd11) begin
             count <= 4'd0;
             ready <= 1'b1;
@@ -57,15 +61,17 @@ always @(posedge clk_100mhz) begin
             ready_data <= tmp_data[8:1];
         end
         else begin
-            tmp_data[count] <= data;
+            tmp_data[count] <= ps2_data;
             count <= count + 4'd1;
             ready <= 1'b0;
         end
     end
 end
 
+assign ready_edge = ~ready_sync[0] & ready_sync[1];
+
 always @(posedge clk_100mhz) begin
-    if (ready) begin
+    if (ready_edge) begin
         if (prev_data == 8'hF0) begin
             press <= 1'b0;
             ascii <= 8'h00;
