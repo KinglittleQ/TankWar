@@ -132,16 +132,6 @@ always @(posedge clk_100mhz) begin
         endcase
     end
     else if (clk250_edge | go) begin
-        // for (i = 0; i < n_bullets; i = i + 1) begin
-        //     // case (bullets_direct[i])
-        //     // LEFT: bullets_x[i] <= bullets_x[i] - 10'd1;
-        //     // RIGHT: bullets_x[i] <= bullets_x[i] + 10'd1;
-        //     // UP: bullets_y[i] <= bullets_y[i] - 10'd1;
-        //     // DOWN: bullets_y[i] <= bullets_y[i] + 10'd1;
-        //     // endcase
-        //     if (bullets_direct[1] == LEFT)
-        //         bullets_x[i] <= bullets_x[i] - 10'd1;
-        // end
         if (clk250_edge & ~go) begin
             go <= 1'b1;
         end
