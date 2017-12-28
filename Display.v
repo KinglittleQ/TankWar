@@ -10,6 +10,7 @@ module Display (
 parameter NONE = 4'd0;
 parameter WALL = 4'd1;
 parameter TANK = 4'd2;
+parameter BULLET = 4'd3;
 
 always @(posedge clk) begin
     case (category)
@@ -31,7 +32,13 @@ always @(posedge clk) begin
         green <= 4'hf;
         blue <= 4'hf;
 	 end
-	 default:
+    BULLET:
+     begin
+         red <= 4'h0;
+         green <= 4'hf;
+         blue <= 4'hf;
+     end
+	default:
 	 begin
         red <= 4'h0;
         green <= 4'h0;

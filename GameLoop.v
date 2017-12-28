@@ -28,6 +28,7 @@ parameter DOWN = 3'b011;
 parameter NONE = 4'd0;
 parameter WALL = 4'd1;
 parameter TANK = 4'd2;
+parameter BULLET = 4'd3;
 
 reg[9:0] tanks_x[MAX_TANKS : 0];
 reg[9:0] tanks_y[MAX_TANKS : 0];
@@ -39,9 +40,14 @@ reg[9:0] bullets_y[MAX_BULLETS : 0];
 reg[2:0] bullets_direct[MAX_BULLETS : 0];
 reg[6:0] n_bullets;
 
-wire clk_500ms, clk_250ms;
+reg[1000:0] map[1000:0];
 
-integer i, j, k;
+integer i, j;
+
+
+wire clk_500ms, clk_250ms;
+reg[6:0] bullets_ptr;
+reg go;
 
 initial begin
     tanks_x[0] = 10'd0;
@@ -50,30 +56,126 @@ initial begin
     n_tanks = 6'd1;
 
     n_bullets = 7'd0;
-
-	category <= NONE;
+    bullets_ptr = 7'd0;
+    go = 1'b0;
+    k = 7'd0;
+	category = NONE;
+    for (i = 0; i <= 1000; i = i + 1) begin
+        map[i] = 1001'b0;
+    end
 end
-
 
 CLK_500ms M0 (
     .clk_100mhz(clk_100mhz),
     .clk_500ms(clk_500ms)
     );
 
-reg[2:0] moving_shift;
-reg[2:0] time_shift;
+CLK_250ms M2 (
+    .clk_100mhz(clk_100mhz),
+    .clk_250ms(clk_250ms)
+    );
+
+reg[2:0] moving_sync;
+reg[2:0] clk500_sync;
+reg[2:0] shoot_sync;
+reg[2:0] clk250_sync;
 
 always @(posedge clk_100mhz) begin
-    moving_shift <= {moving, moving_shift[2:1]};
-    time_shift <= {clk_500ms, time_shift[2:1]};
+    moving_sync <= {moving, moving_sync[2:1]};
+    clk500_sync <= {clk_500ms, clk500_sync[2:1]};
+    shoot_sync <= {shoot, shoot_sync[2:1]};
+    clk250_sync <= {clk_250ms, clk250_sync[2:1]};
 end
 
 
-assign moving_edge = ~moving_shift[0] & moving_shift[1];
-assign time_edge = ~time_shift[0] & time_shift[1];
+assign moving_edge = ~moving_sync[0] & moving_sync[1];
+assign clk500_edge = ~clk500_sync[0] & clk500_sync[1];
+assign shoot_edge = ~shoot_sync[0] & shoot_sync[1];
+assign clk250_edge = ~clk250_sync[0] & clk250_sync[1];
 
+// shoot
 always @(posedge clk_100mhz) begin
-if (moving_edge | time_edge) begin
+    if (shoot_edge) begin
+        case (tanks_direct[0])
+        LEFT: begin
+            if (tanks_x[0] > 10'd0) begin
+                n_bullets <= n_bullets + 7'd1;
+                bullets_x[n_bullets] <= tanks_x[0] - 10'd1;
+                bullets_y[n_bullets] <= tanks_y[0];
+                bullets_direct[n_bullets] <= tanks_direct[0];
+            end
+        end
+        RIGHT: begin
+            if (tanks_x[0] < WIDTH - 1) begin
+                n_bullets <= n_bullets + 7'd1;
+                bullets_x[n_bullets] <= tanks_x[0] + 10'd1;
+                bullets_y[n_bullets] <= tanks_y[0];
+                bullets_direct[n_bullets] <= tanks_direct[0];
+            end
+        end
+        UP: begin
+            if (tanks_y[0] > 10'd0) begin
+                n_bullets <= n_bullets + 7'd1;
+                bullets_x[n_bullets] <= tanks_x[0];
+                bullets_y[n_bullets] <= tanks_y[0] - 10'd1;
+                bullets_direct[n_bullets] <= tanks_direct[0];
+            end
+        end
+        DOWN: begin
+            if (tanks_y[0] < HEIGHT - 1) begin
+                n_bullets <= n_bullets + 7'd1;
+                bullets_x[n_bullets] <= tanks_x[0];
+                bullets_y[n_bullets] <= tanks_y[0] + 10'd1;
+                bullets_direct[n_bullets] <= tanks_direct[0];
+            end
+        end
+        endcase
+    end
+    else if (clk250_edge | go) begin
+        // for (i = 0; i < n_bullets; i = i + 1) begin
+        //     // case (bullets_direct[i])
+        //     // LEFT: bullets_x[i] <= bullets_x[i] - 10'd1;
+        //     // RIGHT: bullets_x[i] <= bullets_x[i] + 10'd1;
+        //     // UP: bullets_y[i] <= bullets_y[i] - 10'd1;
+        //     // DOWN: bullets_y[i] <= bullets_y[i] + 10'd1;
+        //     // endcase
+        //     if (bullets_direct[1] == LEFT)
+        //         bullets_x[i] <= bullets_x[i] - 10'd1;
+        // end
+        if (clk250_edge & ~go) begin
+            go <= 1'b1;
+        end
+
+        if (bullets_ptr != n_bullets) begin
+            if (bullets_x[bullets_ptr] < 0 | bullets_x[bullets_ptr] > WIDTH | bullets_y[bullets_ptr] < 0 | bullets_y[bullets_ptr] > HEIGHT) begin
+                n_bullets <= n_bullets - 7'd1;
+                if (n_bullets != 7'd0) begin
+                    bullets_x[bullets_ptr] <= bullets_x[n_bullets - 7'd1];
+                    bullets_y[bullets_ptr] <= bullets_y[n_bullets - 7'd1];
+                    bullets_direct[bullets_ptr] <= bullets_direct[n_bullets - 7'd1];
+                end
+            end
+            else begin
+                case (bullets_direct[bullets_ptr])
+                    LEFT: bullets_x[bullets_ptr] <= bullets_x[bullets_ptr] - 10'd1;
+                    RIGHT: bullets_x[bullets_ptr] <= bullets_x[bullets_ptr] + 10'd1;
+                    UP: bullets_y[bullets_ptr] <= bullets_y[bullets_ptr] - 10'd1;
+                    DOWN: bullets_y[bullets_ptr] <= bullets_y[bullets_ptr] + 10'd1;
+                endcase
+                bullets_ptr <= bullets_ptr + 7'd1;
+            end
+        end
+        else begin
+            bullets_ptr <= 7'd0;
+            go <= 1'b0;
+        end
+    end
+end
+
+
+// tanks move
+always @(posedge clk_100mhz) begin
+if (moving_edge | clk500_edge) begin
     if (moving) begin
         if (tanks_x[0] >= 10'd0 && tanks_x[0] < WIDTH - 10'd2 && tanks_y[0] >= 0 && tanks_y[0] < HEIGHT - 10'd2) begin
             case (direct)
@@ -100,6 +202,20 @@ if (moving_edge | time_edge) begin
 end
 end
 
+reg[6:0] cnt;
+always @(posedge clk_100mhz) begin
+    if (cnt != n_bullets) begin
+        map[bullets_x[cnt]][bullets_y[cnt]] <= 1'b1;
+    end
+    else begin
+        cnt <= 7'd0;
+    end
+end
+
+
+
+reg[6:0] k;
+integer m = 0, n = 0;
 
 always @(posedge clk_100mhz) begin
     j = 0;
@@ -112,11 +228,24 @@ always @(posedge clk_100mhz) begin
 
     // TANK
     for (i = 0; i < n_tanks; i = i + 1) begin
-        if (pixel_x >= tanks_x[i] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_x <= (tanks_x[i] + 10'd2) * BLOCK_SIZE + BOUNDARY_WIDTH &&
-            pixel_y >= tanks_y[i] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_y <= (tanks_y[i] + 10'd2) * BLOCK_SIZE + BOUNDARY_WIDTH) begin
+        if (pixel_x >= tanks_x[i] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_x < (tanks_x[i] + 10'd3) * BLOCK_SIZE + BOUNDARY_WIDTH &&
+            pixel_y >= tanks_y[i] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_y < (tanks_y[i] + 10'd3) * BLOCK_SIZE + BOUNDARY_WIDTH) begin
             j = 2;
         end
 	end
+
+    // bullet
+    if (k != n_bullets) begin
+        if (pixel_x >= bullets_x[k] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_x < (bullets_x[k] + 10'd1) * BLOCK_SIZE + BOUNDARY_WIDTH &&
+            pixel_y >= bullets_y[k] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_y < (bullets_y[k] + 10'd1) * BLOCK_SIZE + BOUNDARY_WIDTH) begin
+            j = 3;
+        end
+        k <= k + 7'd1;
+    end
+    else begin
+        k <= 7'd0;
+    end
+
 
     if (j == 0) begin
         category <= NONE;
@@ -126,6 +255,9 @@ always @(posedge clk_100mhz) begin
     end
     else if (j == 2) begin
         category <= TANK;
+    end
+    else if (j == 3) begin
+        category <= BULLET;
     end
     else begin
         category <= NONE;

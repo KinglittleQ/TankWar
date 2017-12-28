@@ -25,6 +25,7 @@ wire moving;
 wire[7:0] ascii;
 wire press;
 wire rst;
+wire shoot;
 
 assign Buzzer = 1'b1;
 
@@ -50,7 +51,8 @@ Direct M2 (
     .ascii(ascii),
     .press(press),
     .direct(moving_direct),
-    .moving(moving)
+    .moving(moving),
+    .shoot(shoot)
     );
 
 
@@ -60,7 +62,7 @@ GameLoop M3 (
     .moving(moving),
     .pixel_x(pixel_x),
     .pixel_y(pixel_y),
-
+    .shoot(shoot),
     .category(category)
     );
 
