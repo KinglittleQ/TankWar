@@ -114,30 +114,32 @@ assign shoot_edge = ~shoot_sync[0] & shoot_sync[1];
 assign clk250_edge = ~clk250_sync[0] & clk250_sync[1];
 assign clk5s_edge = ~clk5s_sync[0] & clk5s_sync[1];
 
-// shoot
+
+// bullets
 always @(posedge clk_100mhz) begin
+    // shoot
     if (shoot_edge) begin
         case (tanks_direct[0])
         LEFT: begin
             if (tanks_x[0] > 10'd0) begin
                 n_bullets <= n_bullets + 7'd1;
                 bullets_x[n_bullets] <= tanks_x[0] - 10'd1;
-                bullets_y[n_bullets] <= tanks_y[0];
+                bullets_y[n_bullets] <= tanks_y[0] + 10'd1;
                 bullets_direct[n_bullets] <= tanks_direct[0];
             end
         end
         RIGHT: begin
             if (tanks_x[0] < WIDTH - 1) begin
                 n_bullets <= n_bullets + 7'd1;
-                bullets_x[n_bullets] <= tanks_x[0] + 10'd1;
-                bullets_y[n_bullets] <= tanks_y[0];
+                bullets_x[n_bullets] <= tanks_x[0] + 10'd3;
+                bullets_y[n_bullets] <= tanks_y[0] + 10'd1;
                 bullets_direct[n_bullets] <= tanks_direct[0];
             end
         end
         UP: begin
             if (tanks_y[0] > 10'd0) begin
                 n_bullets <= n_bullets + 7'd1;
-                bullets_x[n_bullets] <= tanks_x[0];
+                bullets_x[n_bullets] <= tanks_x[0] + 10'd1;
                 bullets_y[n_bullets] <= tanks_y[0] - 10'd1;
                 bullets_direct[n_bullets] <= tanks_direct[0];
             end
@@ -145,13 +147,14 @@ always @(posedge clk_100mhz) begin
         DOWN: begin
             if (tanks_y[0] < HEIGHT - 1) begin
                 n_bullets <= n_bullets + 7'd1;
-                bullets_x[n_bullets] <= tanks_x[0];
-                bullets_y[n_bullets] <= tanks_y[0] + 10'd1;
+                bullets_x[n_bullets] <= tanks_x[0] + 10'd1;
+                bullets_y[n_bullets] <= tanks_y[0] + 10'd3;
                 bullets_direct[n_bullets] <= tanks_direct[0];
             end
         end
         endcase
     end
+    // bullets move
     else if (clk250_edge | bullets_go) begin
         if (clk250_edge & ~bullets_go) begin
             bullets_go <= 1'b1;
@@ -182,11 +185,17 @@ always @(posedge clk_100mhz) begin
             bullets_go <= 1'b0;
         end
     end
+
+    
+
+    
 end
 
 
 // tanks move
 always @(posedge clk_100mhz) begin
+
+    // generate tanks
     if (clk5s_edge && (n_tanks < MAX_TANKS)) begin
         n_tanks <= n_tanks + 6'd1;
         tanks_x[n_tanks] <= {5'b00, random_pos};
@@ -197,6 +206,7 @@ always @(posedge clk_100mhz) begin
     end
 
 
+    // player's tank move
     if (moving_edge | clk500_edge) begin // player move
         if (moving) begin
             if (tanks_x[0] >= 10'd0 && tanks_x[0] < WIDTH - 10'd2 && tanks_y[0] >= 0 && tanks_y[0] < HEIGHT - 10'd2) begin
@@ -220,46 +230,81 @@ always @(posedge clk_100mhz) begin
                 endcase 
                 tanks_direct[0] <= direct;
             end
-    		  
         end
     end
 
+    n = 0;
+    // enemy tanks move
     if (clk250_edge | tanks_go) begin   // enemey move
         if (clk250_edge & ~tanks_go) begin
             tanks_go <= 1'b1;
         end
 
         if (tanks_ptr != n_tanks) begin
-            case (tanks_direct[tanks_ptr])
-            LEFT:
-                if (tanks_x[tanks_ptr] > 10'd0) begin
-                    tanks_x[tanks_ptr] <= tanks_x[tanks_ptr] - 10'd1;
-                end
-            RIGHT: begin
-                if (tanks_x[tanks_ptr] < WIDTH - 10'd3) begin
-                    tanks_x[tanks_ptr] <= tanks_x[tanks_ptr] + 10'd1;
+            for (m = 0; m < MAX_BULLETS; m = m + 1) begin
+                if (m < n_bullets) begin
+                    if (bullets_x[m] >= tanks_x[tanks_ptr] && bullets_x[m] < tanks_x[tanks_ptr] + 10'd3 && 
+                        bullets_y[m] >= tanks_y[tanks_ptr] && bullets_y[m] < tanks_y[tanks_ptr] + 10'd3) begin
+                        n = 1;    
+                    end
                 end
             end
-            UP:
-                if (tanks_y[tanks_ptr] > 10'd0) begin
-                    tanks_y[tanks_ptr] <= tanks_y[tanks_ptr] - 10'd1;
+            if (n == 1) begin
+                n_tanks <= n_tanks - 1;
+                tanks_x[tanks_ptr] <= tanks_x[n_tanks - 6'd1];
+                tanks_y[tanks_ptr] <= tanks_y[n_tanks - 6'd1];
+                tanks_direct[tanks_ptr] <= tanks_direct[n_tanks - 6'd1];
+            end
+            else begin
+                case (tanks_direct[tanks_ptr])
+                LEFT:
+                    if (tanks_x[tanks_ptr] > 10'd0) begin
+                        tanks_x[tanks_ptr] <= tanks_x[tanks_ptr] - 10'd1;
+                    end
+                    else begin
+                        tanks_direct[tanks_ptr] <= {1'b0, random_direct};
+                        random_direct <= random_direct + 2'b01;
+                    end
+                RIGHT: begin
+                    if (tanks_x[tanks_ptr] < WIDTH - 10'd3) begin
+                        tanks_x[tanks_ptr] <= tanks_x[tanks_ptr] + 10'd1;
+                    end
+                    else begin
+                        tanks_direct[tanks_ptr] <= {1'b0, random_direct};
+                        random_direct <= random_direct + 2'b01;
+                    end                    
                 end
-            DOWN:
-                if (tanks_y[tanks_ptr] < HEIGHT - 10'd3) begin
-                    tanks_y[tanks_ptr] <= tanks_y[tanks_ptr] + 10'd1;
-                end
-            endcase
-            tanks_ptr <= tanks_ptr + 6'd1;
+                UP:
+                    if (tanks_y[tanks_ptr] > 10'd0) begin
+                        tanks_y[tanks_ptr] <= tanks_y[tanks_ptr] - 10'd1;
+                    end
+                    else begin
+                        tanks_direct[tanks_ptr] <= {1'b0, random_direct};
+                        random_direct <= random_direct + 2'b01;
+                    end                    
+                DOWN:
+                    if (tanks_y[tanks_ptr] < HEIGHT - 10'd3) begin
+                        tanks_y[tanks_ptr] <= tanks_y[tanks_ptr] + 10'd1;
+                    end
+                    else begin
+                        tanks_direct[tanks_ptr] <= {1'b0, random_direct};
+                        random_direct <= random_direct + 2'b01;
+                    end                    
+                endcase
+                tanks_ptr <= tanks_ptr + 6'd1;
+            end
         end
         else begin
             tanks_ptr <= 6'd1;
             tanks_go <= 1'b0;
         end
     end
+
+
 end
 
 
-
+// calculate category
 always @(posedge clk_100mhz) begin
     j = 0;
 
