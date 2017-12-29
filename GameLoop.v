@@ -23,12 +23,11 @@ parameter RIGHT = 3'b001;
 parameter UP = 3'b010;
 parameter DOWN = 3'b011;
 
-
-
 parameter NONE = 4'd0;
 parameter WALL = 4'd1;
 parameter TANK = 4'd2;
 parameter BULLET = 4'd3;
+
 
 reg[9:0] tanks_x[MAX_TANKS : 0];
 reg[9:0] tanks_y[MAX_TANKS : 0];
@@ -40,9 +39,8 @@ reg[9:0] bullets_y[MAX_BULLETS : 0];
 reg[2:0] bullets_direct[MAX_BULLETS : 0];
 reg[6:0] n_bullets;
 
-reg[1000:0] map[1000:0];
 
-integer i, j;
+integer i, j, k;
 
 
 wire clk_500ms, clk_250ms;
@@ -60,9 +58,12 @@ initial begin
     go = 1'b0;
     k = 7'd0;
 	category = NONE;
-    for (i = 0; i <= 1000; i = i + 1) begin
-        map[i] = 1001'b0;
+
+    for (i = 1; i < MAX_BULLETS; i = i + 1) begin
+        bullets_x[i] = 10'd100;
+        bullets_y[i] = 10'd100;
     end
+
 end
 
 CLK_500ms M0 (
@@ -137,12 +138,16 @@ always @(posedge clk_100mhz) begin
         end
 
         if (bullets_ptr != n_bullets) begin
+            // delete bullets
             if (bullets_x[bullets_ptr] < 0 | bullets_x[bullets_ptr] > WIDTH | bullets_y[bullets_ptr] < 0 | bullets_y[bullets_ptr] > HEIGHT) begin
                 n_bullets <= n_bullets - 7'd1;
                 if (n_bullets != 7'd0) begin
                     bullets_x[bullets_ptr] <= bullets_x[n_bullets - 7'd1];
                     bullets_y[bullets_ptr] <= bullets_y[n_bullets - 7'd1];
                     bullets_direct[bullets_ptr] <= bullets_direct[n_bullets - 7'd1];
+
+                    bullets_x[n_bullets - 7'd1] <= 10'd100;
+                    bullets_y[n_bullets - 7'd1] <= 10'd100;
                 end
             end
             else begin
@@ -186,25 +191,16 @@ if (moving_edge | clk500_edge) begin
                     tanks_y[0] <= tanks_y[0] + 10'd1;
                 end
             endcase 
+            tanks_direct[0] <= direct;
         end
 		  
     end
 end
 end
 
-reg[6:0] cnt;
-always @(posedge clk_100mhz) begin
-    if (cnt != n_bullets) begin
-        map[bullets_x[cnt]][bullets_y[cnt]] <= 1'b1;
-    end
-    else begin
-        cnt <= 7'd0;
-    end
-end
 
 
-
-reg[6:0] k;
+// reg[6:0] k;
 integer m = 0, n = 0;
 
 always @(posedge clk_100mhz) begin
@@ -224,16 +220,14 @@ always @(posedge clk_100mhz) begin
         end
 	end
 
-    // bullet
-    if (k != n_bullets) begin
-        if (pixel_x >= bullets_x[k] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_x < (bullets_x[k] + 10'd1) * BLOCK_SIZE + BOUNDARY_WIDTH &&
-            pixel_y >= bullets_y[k] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_y < (bullets_y[k] + 10'd1) * BLOCK_SIZE + BOUNDARY_WIDTH) begin
-            j = 3;
+
+    for (k = 0; k < MAX_BULLETS; k = k + 1) begin
+        if (k < n_bullets) begin
+            if (pixel_x >= bullets_x[k] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_x < (bullets_x[k] + 10'd1) * BLOCK_SIZE + BOUNDARY_WIDTH &&
+                pixel_y >= bullets_y[k] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_y < (bullets_y[k] + 10'd1) * BLOCK_SIZE + BOUNDARY_WIDTH) begin
+                j = 3;
+            end            
         end
-        k <= k + 7'd1;
-    end
-    else begin
-        k <= 7'd0;
     end
 
 
