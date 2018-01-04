@@ -1,0 +1,13 @@
+run
+-ifmt VHDL
+-ent GameOver_exdes
+-p xc7a100t-csg324-2l
+-ifn xst.prj
+-write_timing_constraints No
+-iobuf YES
+-max_fanout 100
+-ofn GameOver_exdes 
+-ofmt NGC
+-bus_delimiter ()
+-hierarchy_separator /
+-case Maintain

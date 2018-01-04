@@ -12,9 +12,10 @@ module TankWar (
     output wire vsync,
     output wire[3:0] red,
     output wire[3:0] green,
-    output wire[3:0] blue
+    output wire[3:0] blue,
 
-
+    output wire[7:0] segment,
+    output wire[3:0] AN
     );
 
 wire clk_25mhz;
@@ -26,6 +27,10 @@ wire[7:0] ascii;
 wire press;
 wire rst;
 wire shoot;
+wire[9:0] addr;
+wire[2:0] tank_direct;
+
+wire[31:0] score;
 
 assign Buzzer = 1'b1;
 
@@ -63,15 +68,23 @@ GameLoop M3 (
     .pixel_x(pixel_x),
     .pixel_y(pixel_y),
     .shoot(shoot),
-    .category(category)
+    .rst(rst),
+    .category(category),
+    .addr(addr),
+    .tank_direct(tank_direct),
+    .alive(alive),
+    .score(score)
     );
 
 Display M4 (
     .clk(clk_100mhz),
     .category(category),
+    .addr(addr),
+    .tank_direct(tank_direct),
     .red(red),
     .green(green),
-    .blue(blue)
+    .blue(blue),
+    .alive(alive)
     );
 
 PS2 M5 (
@@ -82,18 +95,17 @@ PS2 M5 (
     .press(press)
     );
 
-// PS2_OTHER M5 (
-//     .clk25(clk_25mhz),
-//     .PS2C(ps2_clk),
-//     .PS2D(ps2_data),
-//     .press(press),
-//     .ascii(ascii)
-//     );
-
 Anti_jitter M6 (
     .clk_100mhz(clk_100mhz),
-    .RSTN(RSTN),
+    .RSTN(~RSTN),
     .rst(rst)
+    );
+
+DisplayScore M7 (
+    .clk(clk),
+    .score(score),
+    .segment(segment),
+    .AN(AN)
     );
 
 endmodule
