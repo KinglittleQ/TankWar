@@ -11,12 +11,13 @@ module GameLoop (
     output reg[9:0] addr,
     output reg[2:0] tank_direct,
     output reg alive,
-    output reg[31:0] score
+    output reg[31:0] score,
+    output reg player_tank
     ); 
 
 // 650 X 480
 parameter MAX_TANKS = 6'd10;           //  for test !!!
-parameter MAX_BULLETS = 7'd10;         //  for test !!!
+parameter MAX_BULLETS = 7'd20;         //  for test !!!
 
 parameter WIDTH = 10'd60;
 parameter HEIGHT = 10'd45;
@@ -53,9 +54,11 @@ wire clk_500ms, clk_250ms, clk_5s, clk_bullet;
 reg[6:0] bullets_ptr;
 reg[5:0] tanks_ptr;
 reg[5:0] tanks_cnt;
+reg[5:0] tanks_p;
 
 reg bullets_go;
 reg tanks_go;
+reg tank_turn;
 
 reg[4:0] random_pos;
 reg[1:0] random_direct;
@@ -69,9 +72,11 @@ initial begin
     tanks_ptr = 6'd1;
     tanks_go = 1'b0;
     tanks_cnt = 6'd1;
+    tanks_p = 6'd1;
     n_bullets = 7'd0;
     bullets_ptr = 7'd0;
     bullets_go = 1'b0;
+    tank_turn = 1'b0;
 
     k = 7'd0;
 	category = NONE;
@@ -79,12 +84,7 @@ initial begin
     addr = 10'b0;
     alive = 1'b1;
     score = 32'b0;
-
-    for (i = 1; i < MAX_BULLETS; i = i + 1) begin
-        bullets_x[i] = 10'd100;
-        bullets_y[i] = 10'd100;
-    end
-
+    player_tank = 1'b0;
 end
 
 CLK_500ms CLK1 (
@@ -386,6 +386,21 @@ else begin
         end
     end
 
+    if (clk5s_edge | tank_turn) begin
+        if (clk5s_edge & ~tank_turn) begin
+            tank_turn <= 1'b1;
+        end
+        if (tanks_p < n_tanks && tanks_p != 6'd0) begin
+            tanks_direct[tanks_p] <= random_direct;
+            random_direct <= random_direct + 2'b01;
+            tanks_p <= tanks_p + 6'd1;
+        end
+        else begin
+            tanks_p <= 6'd1;
+            tank_turn <= 1'b0;
+        end
+    end
+
 end
 end
 
@@ -408,11 +423,12 @@ always @(posedge clk_100mhz) begin
                 j = 2;
                 addr <= (pixel_y - tanks_y[i] * BLOCK_SIZE - BOUNDARY_WIDTH) * 10'd30 + (pixel_x - tanks_x[i] * BLOCK_SIZE - BOUNDARY_WIDTH) + 10'b1;
                 tank_direct <= tanks_direct[i];
+                player_tank <= (i == 0) ? 1'b1 : 1'b0;
             end
         end
 	end
 
-
+    // BULLET
     for (k = 0; k < MAX_BULLETS; k = k + 1) begin
         if (k < n_bullets) begin
             if (pixel_x >= bullets_x[k] * BLOCK_SIZE + BOUNDARY_WIDTH && pixel_x < (bullets_x[k] + 10'd1) * BLOCK_SIZE + BOUNDARY_WIDTH &&

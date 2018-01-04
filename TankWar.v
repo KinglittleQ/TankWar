@@ -31,6 +31,7 @@ wire[9:0] addr;
 wire[2:0] tank_direct;
 
 wire[31:0] score;
+wire player_tank;
 
 assign Buzzer = 1'b1;
 
@@ -73,7 +74,8 @@ GameLoop M3 (
     .addr(addr),
     .tank_direct(tank_direct),
     .alive(alive),
-    .score(score)
+    .score(score),
+    .player_tank(player_tank)
     );
 
 Display M4 (
@@ -81,6 +83,9 @@ Display M4 (
     .category(category),
     .addr(addr),
     .tank_direct(tank_direct),
+    .pixel_x(pixel_x),
+    .pixel_y(pixel_y),
+    .player_tank(player_tank),
     .red(red),
     .green(green),
     .blue(blue),
