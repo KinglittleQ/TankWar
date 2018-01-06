@@ -32,6 +32,7 @@ wire[2:0] tank_direct;
 
 wire[31:0] score;
 wire player_tank;
+wire start;
 
 assign Buzzer = 1'b1;
 
@@ -70,10 +71,12 @@ GameLoop M3 (
     .pixel_y(pixel_y),
     .shoot(shoot),
     .rst(rst),
+    .press(press),
     .category(category),
     .addr(addr),
     .tank_direct(tank_direct),
     .alive(alive),
+    .start(start),
     .score(score),
     .player_tank(player_tank)
     );
@@ -86,6 +89,7 @@ Display M4 (
     .pixel_x(pixel_x),
     .pixel_y(pixel_y),
     .player_tank(player_tank),
+    .start(start),
     .red(red),
     .green(green),
     .blue(blue),
@@ -107,7 +111,7 @@ Anti_jitter M6 (
     );
 
 DisplayScore M7 (
-    .clk(clk),
+    .clk(clk_100mhz),
     .score(score),
     .segment(segment),
     .AN(AN)

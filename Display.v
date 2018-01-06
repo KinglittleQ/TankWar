@@ -7,6 +7,7 @@ module Display (
     input wire[9:0] pixel_y,
     input wire player_tank,
     input wire alive,
+    input wire start,
 
     output reg[3:0] red,
     output reg[3:0] green,
@@ -25,8 +26,8 @@ parameter DOWN = 3'b011;
 
 wire[11:0] up, down, right, left;
 reg[11:0] tank_rgb;
-reg[15:0] over_addr;
-wire[11:0] over_rgb;
+reg[15:0] over_addr, start_addr;
+wire[11:0] over_rgb, start_rgb;
 
 TANK_UP M0 (
     .clka(clk), // input clka
@@ -68,6 +69,14 @@ GameOver M4 (
     .douta(over_rgb) // output [11 : 0] douta
 );
 
+GameStart M5 (
+    .clka(clk), // input clka
+    .wea(1'b0), // input [0 : 0] wea
+    .addra(start_addr), // input [15 : 0] addra
+    .dina(12'b0), // input [11 : 0] dina
+    .douta(start_rgb) // output [11 : 0] douta
+);
+
 always @(posedge clk) begin
     case (tank_direct)
         UP: begin
@@ -98,6 +107,7 @@ always @(posedge clk) begin
 end
 
 always @(posedge clk) begin
+if (start) begin
     if (alive) begin
         case (category)
         NONE:
@@ -134,7 +144,7 @@ always @(posedge clk) begin
     end
     else begin
         if (pixel_x >= 10'd200 && pixel_x < 10'd440 && pixel_y >= 10'd150 && pixel_y < 10'd310) begin
-            over_addr <= pixel_x - 10'd200 + (pixel_y - 10'd150) * 16'd240 + 16'd1;  // delay 1 clk
+            over_addr <= pixel_x - 10'd200 + (10'd309 - pixel_y) * 16'd240 + 16'd1;  // delay 1 clk
             red <= over_rgb[11:8];
             green <= over_rgb[7:4];
             blue <= over_rgb[3:0];
@@ -145,6 +155,20 @@ always @(posedge clk) begin
             blue <= 4'h0;
         end
     end
+end
+else begin
+    if (pixel_x >= 10'd200 && pixel_x < 10'd440 && pixel_y >= 10'd150 && pixel_y < 10'd310) begin
+        start_addr <= pixel_x - 10'd200 + (pixel_y - 10'd150) * 16'd240 + 16'd1;  // delay 1 clk
+        red <= start_rgb[11:8];
+        green <= start_rgb[7:4];
+        blue <= start_rgb[3:0];
+    end 
+    else begin
+        red <= 4'h0;
+        green <= 4'h0;
+        blue <= 4'h0;
+    end    
+end
 end
 
 

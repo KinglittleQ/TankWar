@@ -6,18 +6,20 @@ module GameLoop (
     input wire[9:0] pixel_x,
     input wire[9:0] pixel_y,
     input wire rst,
+	 input wire press,
 
     output reg[3:0] category,
     output reg[9:0] addr,
     output reg[2:0] tank_direct,
     output reg alive,
-    output reg[31:0] score,
+    output reg start,
+    output reg[15:0] score,
     output reg player_tank
     ); 
 
 // 650 X 480
 parameter MAX_TANKS = 6'd10;           //  for test !!!
-parameter MAX_BULLETS = 7'd20;         //  for test !!!
+parameter MAX_BULLETS = 7'd10;         //  for test !!!
 
 parameter WIDTH = 10'd60;
 parameter HEIGHT = 10'd45;
@@ -63,6 +65,10 @@ reg tank_turn;
 reg[4:0] random_pos;
 reg[1:0] random_direct;
 
+// reg map[WIDTH * HEIGHT : 0];  // map
+// reg[6:0] ri; // map
+// reg[11:0] bullets_addr; // map
+
 initial begin
     tanks_x[0] = 10'd0;
     tanks_y[0] = 10'd0;
@@ -83,7 +89,8 @@ initial begin
     tank_direct = RIGHT;
     addr = 10'b0;
     alive = 1'b1;
-    score = 32'b0;
+    start = 2'b0;
+    score = 16'b0;
     player_tank = 1'b0;
 end
 
@@ -136,7 +143,10 @@ assign clk5s_edge = ~clk5s_sync[0] & clk5s_sync[1];
 assign clkbullet_edge = ~clkbullet_sync[0] & clkbullet_sync[1];
 
 // bullets
-always @(posedge clk_100mhz or posedge rst) begin
+always @(posedge clk_100mhz) begin
+
+if (start) begin //---------game start----------
+
 if (rst) begin
     n_bullets <= 7'd0;
     bullets_ptr <= 7'd0;
@@ -154,6 +164,7 @@ else begin
                 bullets_y[n_bullets] <= tanks_y[0] + 10'd1;
                 bullets_direct[n_bullets] <= tanks_direct[0];
                 is_player[n_bullets] <= 1'b1;
+                // map[tanks_x[0] - 10'd1 + (tanks_y[0] + 10'd1) * WIDTH] <= 1'b1;  // map
             end
         end
         RIGHT: begin
@@ -163,6 +174,7 @@ else begin
                 bullets_y[n_bullets] <= tanks_y[0] + 10'd1;
                 bullets_direct[n_bullets] <= tanks_direct[0];
                 is_player[n_bullets] <= 1'b1;
+                // map[tanks_x[0] + 10'd3 + (tanks_y[0] + 10'd1) * WIDTH] <= 1'b1; // map
             end
         end
         UP: begin
@@ -172,6 +184,7 @@ else begin
                 bullets_y[n_bullets] <= tanks_y[0] - 10'd1;
                 bullets_direct[n_bullets] <= tanks_direct[0];
                 is_player[n_bullets] <= 1'b1;
+                // map[tanks_x[0] + 10'd1 + (tanks_y[0] - 10'd1) * WIDTH] <= 1'b1; // map                
             end
         end
         DOWN: begin
@@ -181,6 +194,7 @@ else begin
                 bullets_y[n_bullets] <= tanks_y[0] + 10'd3;
                 bullets_direct[n_bullets] <= tanks_direct[0];
                 is_player[n_bullets] <= 1'b1;
+                // map[tanks_x[0] + 10'd1 + (tanks_y[0] + 10'd3) * WIDTH] <= 1'b1;  // map
             end
         end
         endcase
@@ -200,14 +214,28 @@ else begin
                     bullets_y[bullets_ptr] <= bullets_y[n_bullets - 7'd1];
                     bullets_direct[bullets_ptr] <= bullets_direct[n_bullets - 7'd1];
                     is_player[bullets_ptr] <= is_player[n_bullets - 7'd1];
+                    // map[bullets_x[bullets_ptr] + bullets_y[bullets_ptr] * WIDTH] <= 1'b0; // map
                 end
             end
             else begin
+                // map[bullets_x[bullets_ptr] + bullets_y[bullets_ptr] * WIDTH] <= 1'b0; // map
                 case (bullets_direct[bullets_ptr])
-                    LEFT: bullets_x[bullets_ptr] <= bullets_x[bullets_ptr] - 10'd1;
-                    RIGHT: bullets_x[bullets_ptr] <= bullets_x[bullets_ptr] + 10'd1;
-                    UP: bullets_y[bullets_ptr] <= bullets_y[bullets_ptr] - 10'd1;
-                    DOWN: bullets_y[bullets_ptr] <= bullets_y[bullets_ptr] + 10'd1;
+                    LEFT: begin
+                        bullets_x[bullets_ptr] <= bullets_x[bullets_ptr] - 10'd1;
+                        // map[bullets_x[bullets_ptr] - 1 + bullets_y[bullets_ptr] * WIDTH] <= 1'b1; // map
+                    end
+                    RIGHT: begin
+                        bullets_x[bullets_ptr] <= bullets_x[bullets_ptr] + 10'd1;
+                        // map[bullets_x[bullets_ptr] + 1 + bullets_y[bullets_ptr] * WIDTH] <= 1'b1; // map
+                    end
+                    UP: begin
+                        bullets_y[bullets_ptr] <= bullets_y[bullets_ptr] - 10'd1;
+                        // map[bullets_x[bullets_ptr] + (bullets_y[bullets_ptr] - 1) * WIDTH] <= 1'b1; // map
+                    end
+                    DOWN: begin
+                        bullets_y[bullets_ptr] <= bullets_y[bullets_ptr] + 10'd1;
+                        // map[bullets_x[bullets_ptr] + (bullets_y[bullets_ptr] + 1) * WIDTH] <= 1'b1; // map
+                    end
                 endcase
                 bullets_ptr <= bullets_ptr + 7'd1;
             end
@@ -227,6 +255,7 @@ else begin
                     bullets_y[n_bullets] <= tanks_y[tanks_cnt] + 10'd1;
                     bullets_direct[n_bullets] <= LEFT;
                     is_player[n_bullets] <= 1'b0;
+                    // map[tanks_x[tanks_cnt] - 1 + (tanks_y[tanks_cnt] + 1) * WIDTH] <= 1'b1; // map
                 end
             end
             RIGHT: begin
@@ -236,6 +265,7 @@ else begin
                     bullets_y[n_bullets] <= tanks_y[tanks_cnt] + 10'd1;
                     bullets_direct[n_bullets] <= RIGHT;
                     is_player[n_bullets] <= 1'b0;
+                    // map[tanks_x[tanks_cnt] + 3 + (tanks_y[tanks_cnt] + 1) * WIDTH] <= 1'b1; // map
                 end
             end
             UP: begin
@@ -245,6 +275,7 @@ else begin
                     bullets_y[n_bullets] <= tanks_y[tanks_cnt] - 10'd1;
                     bullets_direct[n_bullets] <= UP;
                     is_player[n_bullets] <= 1'b0;
+                    // map[tanks_x[tanks_cnt] + 1 + (tanks_y[tanks_cnt] - 1) * WIDTH] <= 1'b1; // map
                 end
             end
             DOWN: begin
@@ -254,6 +285,7 @@ else begin
                     bullets_y[n_bullets] <= tanks_y[tanks_cnt] + 10'd3;
                     bullets_direct[n_bullets] <= DOWN;
                     is_player[n_bullets] <= 1'b0;
+                    // map[tanks_x[tanks_cnt] + 1 + (tanks_y[tanks_cnt] + 3) * WIDTH] <= 1'b1; // map
                 end
             end
             endcase 
@@ -264,11 +296,17 @@ else begin
         end
     end
 end
+
+end //---------game start----------
+
 end
 
 
 // tanks
-always @(posedge clk_100mhz or posedge rst) begin
+always @(posedge clk_100mhz) begin
+
+if (start) begin //---------game start----------
+
 if (rst) begin
     tanks_x[0] <= 10'd0;
     tanks_y[0] <= 10'd0;
@@ -277,7 +315,7 @@ if (rst) begin
 
     tanks_ptr <= 6'd1;
     tanks_go <= 1'b0;
-    score <= 32'b0;
+    score <= 16'b0;
 end
 else begin
     // generate tanks
@@ -339,7 +377,14 @@ else begin
                 tanks_x[tanks_ptr] <= tanks_x[n_tanks - 6'd1];
                 tanks_y[tanks_ptr] <= tanks_y[n_tanks - 6'd1];
                 tanks_direct[tanks_ptr] <= tanks_direct[n_tanks - 6'd1];
-                score <= score + 32'd1;  // add player's score
+                if (score[3:0] < 4'b1001)
+                    score[3:0] <= score[3:0] + 4'b0001;  //-----------------------add player's score
+                else if (score[7:4] < 4'b1001)
+                    score[7:4] <= score[7:4] + 4'b0001;
+                else if (score[11:8] < 4'b1001)
+                    score[11:8] <= score[11:8] + 4'b0001;
+                else if (score[15:12] < 4'b1001)
+                    score[15:12] <= score[15:12] + 4'b0001;
             end
             else begin
                 case (tanks_direct[tanks_ptr])
@@ -400,13 +445,19 @@ else begin
             tank_turn <= 1'b0;
         end
     end
+end
+
+end //---------game start----------
 
 end
-end
+
+// assign in_area = (pixel_x >= BOUNDARY_WIDTH && pixel_x < WIDTH * BLOCK_SIZE && pixel_y >= BOUNDARY_WIDTH && pixel_y < HEIGHT * BLOCK_SIZE);
 
 
 // calculate category
 always @(posedge clk_100mhz) begin
+if (start) begin //---------game start----------
+
     j = 0;
 
     // WALL
@@ -437,6 +488,10 @@ always @(posedge clk_100mhz) begin
             end            
         end
     end
+    // if (in_area) begin
+    //     if (map[(pixel_x - BOUNDARY_WIDTH) / BLOCK_SIZE + (pixel_y - BOUNDARY_WIDTH) / BLOCK_SIZE * WIDTH] == 1'b1)
+    //         j = 3;
+    // end
 
 
     if (j == 0) begin
@@ -454,13 +509,16 @@ always @(posedge clk_100mhz) begin
     else begin
         category <= NONE;
     end
-
+end //---------game start----------
 end
 
 integer a, b, c;
-always @(posedge clk_100mhz or posedge rst) begin
+always @(posedge clk_100mhz) begin
+if (start) begin //---------game start----------
+
 if (rst) begin
     alive <= 1'b1;
+    start <= 1'b0;
 end
 else begin
     b = 0;
@@ -477,6 +535,14 @@ else begin
         alive <= 1'b0;    
     end
 end
+
+end //---------game start----------
+else begin 
+    if (alive && press) begin
+        start <= 1'b1;
+    end
 end
+end
+
 
 endmodule

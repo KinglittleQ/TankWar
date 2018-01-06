@@ -4,7 +4,10 @@ module CLK_500ms (
     );
 
 reg[31:0] cnt;
-initial cnt <= 32'd0;
+initial begin
+	cnt = 32'd0;
+	clk_500ms = 1'b0;
+end
 
 always @(posedge clk_100mhz) begin
     if (cnt >= 32'd25000000) begin
