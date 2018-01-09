@@ -379,12 +379,21 @@ else begin
                 tanks_direct[tanks_ptr] <= tanks_direct[n_tanks - 6'd1];
                 if (score[3:0] < 4'b1001)
                     score[3:0] <= score[3:0] + 4'b0001;  //-----------------------add player's score
-                else if (score[7:4] < 4'b1001)
+                else if (score[7:4] < 4'b1001) begin
                     score[7:4] <= score[7:4] + 4'b0001;
-                else if (score[11:8] < 4'b1001)
+                    score[3:0] <= 4'b0000;
+                end
+                else if (score[11:8] < 4'b1001) begin
                     score[11:8] <= score[11:8] + 4'b0001;
-                else if (score[15:12] < 4'b1001)
+                    score[7:4] <= 4'b0000;
+                    score[3:0] <= 4'b0000;
+                end
+                else if (score[15:12] < 4'b1001) begin
                     score[15:12] <= score[15:12] + 4'b0001;
+                    score[11:8] <= 4'b0000;
+                    score[7:4] <= 4'b0000;
+                    score[3:0] <= 4'b0000;                    
+                end
             end
             else begin
                 case (tanks_direct[tanks_ptr])
